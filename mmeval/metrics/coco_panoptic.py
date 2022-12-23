@@ -2,7 +2,6 @@ import datetime
 import numpy as np
 import os.path as osp
 import tempfile
-import logging
 import itertools
 from collections import OrderedDict
 from json import dump
@@ -28,7 +27,6 @@ except ImportError:
     VOID = None
     PQStat = None
     OFFSET = 256 * 256 * 256
-logging.basicConfig(level=logging.INFO)
 
 
 CLASSES = [
@@ -154,7 +152,7 @@ class COCOPanopticMetric(BaseMetric):
             self._coco_api = None
         
         if self.categories is None:
-            # use defalut coco categories
+            # use default coco categories
             self.categories = []
             idx = 1
             for name in CLASSES:

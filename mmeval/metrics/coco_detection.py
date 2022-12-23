@@ -267,7 +267,7 @@ class COCODetectionMetric(BaseMetric):
                 data['bbox'] = self.xyxy2xywh(bboxes[i])
                 data['score'] = float(scores[i])
                 data['category_id'] = self.cat_ids[label]
-                bbox_json_results.append(data)
+                bbox_json_results.append(data)  # 仅仅加了bbox
 
             if segm_json_results is None:
                 continue
@@ -284,7 +284,7 @@ class COCODetectionMetric(BaseMetric):
                 if isinstance(masks[i]['counts'], bytes):
                     masks[i]['counts'] = masks[i]['counts'].decode()
                 data['segmentation'] = masks[i]
-                segm_json_results.append(data)
+                segm_json_results.append(data)  # 除了bbox还加了segm的json
 
         result_files = dict()
         result_files['bbox'] = f'{outfile_prefix}.bbox.json'
@@ -361,7 +361,7 @@ class COCODetectionMetric(BaseMetric):
                     id=len(annotations) +
                     1,  # coco api requires id starts with 1
                     image_id=img_id,
-                    bbox=coco_bbox,
+                    bbox=coco_bbox,  # coco的bbox是xywh类型的，　xy是左上角的坐标
                     iscrowd=int(ignore_flag),
                     category_id=int(label),
                     area=coco_bbox[2] * coco_bbox[3])
@@ -458,9 +458,9 @@ class COCODetectionMetric(BaseMetric):
         cache_cat_ids = self.cat_ids
         cache_img_ids = self.img_ids
 
-        self._results = []
-        self.add(*args, **kwargs)
-        metric_result = self.compute_metric(self._results)
+        self._results = []  # 置空
+        self.add(*args, **kwargs)  # add函数
+        metric_result = self.compute_metric(self._results)  #主要的计算函数
 
         # recover states from cache
         self._results = cache_results
@@ -468,7 +468,7 @@ class COCODetectionMetric(BaseMetric):
         self.cat_ids = cache_cat_ids
         self.img_ids = cache_img_ids
 
-        return metric_result
+        return metric_result    # 返回这个计算指标
 
     def compute_metric(self, results: list) -> Dict[str, float]:
         """Compute the COCO metrics.
@@ -497,7 +497,7 @@ class COCODetectionMetric(BaseMetric):
             print('Converting ground truth to coco format...')
             coco_json_path = self.gt_to_coco_json(
                 gt_dicts=gts, outfile_prefix=outfile_prefix)
-            self._coco_api = COCO(coco_json_path)
+            self._coco_api = COCO(coco_json_path)  #　直接用了coco装饰器进行转换
 
         # handle lazy init
         if len(self.cat_ids) == 0:
@@ -507,7 +507,7 @@ class COCODetectionMetric(BaseMetric):
             self.img_ids = self._coco_api.get_img_ids()
 
         # convert predictions to coco format and dump to json file
-        result_files = self.results2json(preds, outfile_prefix)
+        result_files = self.results2json(preds, outfile_prefix)  # 只是把pred出来的结果pack到了tmp文件夹里面
 
         eval_results: OrderedDict = OrderedDict()
         if self.format_only:
@@ -533,13 +533,13 @@ class COCODetectionMetric(BaseMetric):
                     # small/medium/large mask AP results.
                     for x in predictions:
                         x.pop('bbox')
-                coco_dt = self._coco_api.loadRes(predictions)
+                coco_dt = self._coco_api.loadRes(predictions)  # 用这个加载result结果
 
             except IndexError:
                 print('The testing results of the whole dataset is empty.')
                 break
 
-            coco_eval = COCOeval(self._coco_api, coco_dt, iou_type)
+            coco_eval = COCOeval(self._coco_api, coco_dt, iou_type)  # 使用了cocoeval这个api，前者为groundtruth，后者为prediction，全转成了COCO形式
 
             coco_eval.params.catIds = self.cat_ids
             coco_eval.params.imgIds = self.img_ids
